@@ -1,0 +1,5 @@
+Codice, Nome, NomeDip, NumeroProgrammato
+8019,Informatica,DISI,Nonattivo
+8014,InfoMan,DISI,Nonattivo
+6061, Matematica,MAT,Attivo
+6610,Economia Aziendale,DISA,Attivo

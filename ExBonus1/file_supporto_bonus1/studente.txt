@@ -1,0 +1,6 @@
+Matricola, CodiceCL, Nome, Cognome, CFUConseguiti
+1,8014,Luca,Bianchi, 12
+2,8014,Maria,Rossi, 18
+3,8014,Giulia,Neri, 0
+4,8014,Paolo,Verdi, 24
+5,8014,Chiara,Marrone, 6
