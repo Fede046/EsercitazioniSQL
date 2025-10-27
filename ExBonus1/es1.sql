@@ -55,13 +55,13 @@ CREATE TABLE CORSOLAUREA (
     Codice INT PRIMARY KEY,
     Nome VARCHAR(30) NOT NULL UNIQUE,
     NomeDip VARCHAR(30) NOT NULL,
-    NumeroProgrammato ENUM('Attivo', 'Nonattivo') NOT NULL,
+    NumeroProgrammato ENUM('Attivo', 'Nonattivo'),
     Foreign Key (NomeDip) REFERENCES DIPARTIMENTO (Nome)
 );
 
 -- Studenti
 CREATE TABLE STUDENTE (
-    Matricola INT PRIMARY KEY,
+    Matricola VARCHAR(30) PRIMARY KEY,
     CodiceCL INT,
     Nome VARCHAR(30),
     Cognome VARCHAR(30),
@@ -71,7 +71,7 @@ CREATE TABLE STUDENTE (
 
 -- INSEGNAMENTO
 CREATE TABLE INSEGNAMENTO (
-    Id INT PRIMARY KEY,
+    Id VARCHAR(30) PRIMARY KEY,
     Nome VARCHAR(30),
     CodiceCL INT,
     CFU INT,
@@ -81,7 +81,7 @@ CREATE TABLE INSEGNAMENTO (
         'SECS',
         'IUS',
         'MAT'
-    ) NOT NULL,
+    ),
     NumIscritti INT,
     MaxIscritti INT,
     Foreign Key (CodiceCL) REFERENCES CORSOLAUREA (Codice)
@@ -89,8 +89,8 @@ CREATE TABLE INSEGNAMENTO (
 
 --PIANOSTUDI
 CREATE Table PIANOSTUDI (
-    Matricola INT,
-    IdInsegnamento INT,
+    Matricola VARCHAR(30),
+    IdInsegnamento VARCHAR(30),
     Data DATE,
     PRIMARY KEY (Matricola, IdInsegnamento),
     FOREIGN KEY (Matricola) REFERENCES STUDENTE (Matricola) ON DELETE CASCADE,
@@ -99,8 +99,8 @@ CREATE Table PIANOSTUDI (
 
 --RICHIESTE_RIFIUTATE
 CREATE Table RICHIESTE_RIFIUTATE (
-    Matricola INT,
-    IdInsegnamento INT,
+    Matricola VARCHAR(30),
+    IdInsegnamento VARCHAR(30),
     Data DATE,
     PRIMARY KEY (Matricola, IdInsegnamento),
     FOREIGN KEY (Matricola) REFERENCES STUDENTE (Matricola) ON DELETE CASCADE,
@@ -109,14 +109,78 @@ CREATE Table RICHIESTE_RIFIUTATE (
 
 --VERBALIZZAZIONE
 CREATE Table VERBALIZZAZIONE (
-    Matricola INT,
-    IdInsegnamento INT,
+    Matricola VARCHAR(30),
+    IdInsegnamento VARCHAR(30),
     Data DATE,
     Voto INT NOT NULL,
     PRIMARY KEY (Matricola, IdInsegnamento),
     FOREIGN KEY (Matricola) REFERENCES STUDENTE (Matricola) ON DELETE CASCADE,
     FOREIGN KEY (IdInsegnamento) REFERENCES INSEGNAMENTO (Id) ON DELETE CASCADE
 );
+
+--Implementare	i	seguenti	trigger:
+
+-- IncrementaPartecipanti	à	Dopo	ogni	inserimento	nella	tabella	PIANOSTUDI
+-- relativo	ad	un	certo	insegnamento	con	id	pari	a	IdInsegnamento,	modifica
+-- automaticamente	il	campo	NumIscritti	associato	a	quell’id	nella	tabella
+-- INSEGNAMENTO,	incrementandolo	di	1	unità.
+
+DELIMITER |
+
+CREATE TRIGGER IncrementaPartecipanti
+AFTER INSERT ON PIANOSTUDI
+FOR EACH ROW
+BEGIN
+    UPDATE INSEGNAMENTO SET NumIscritti = NumIscritti + 1 WHERE Id = NEW.IdInsegnamento;
+END |
+
+DELIMITER;
+
+-- DecrementaPartecipanti	à	Dopo	ogni	rimozione	nella	tabella	PIANOSTUDI
+-- relativo	ad	un	certo	insegnamento	con	id	pari	a	IdInsegnamento,	modifica
+-- automaticamente	il	campo	NumIscritti	associato	a	quell’id	nella	tabella
+-- INSEGNAMENTO,	decrementandolo	di	1	unità.
+
+DELIMITER |
+
+CREATE TRIGGER DecrementaPartecipanti
+AFTER DELETE ON PIANOSTUDI
+FOR EACH ROW
+BEGIN
+    UPDATE INSEGNAMENTO
+    SET NumIscritti = NumIscritti - 1
+-- controllare se va bene old non c'è nelle slide del PROF ma risolve il problema
+-- nel caso valutare soluzioni alternative
+    WHERE Id = OLD.IdInsegnamento
+      AND NumIscritti > 0;
+END |
+
+DELIMITER;
+
+-- Dopo	ogni	inserimento	nella	tabella	VERBALIZZAZIONE	relativo
+-- ad	un	certo	riga	con	id	dell’insegnamento	pari	a	IdInsegnamento	e	matricola	pari	a	Mat,
+-- incrementa	automaticamente	il	campo	CFUConseguiti	nella	tabella	STUDENTE	nella	riga
+-- relativa	alla	matricola	uguale	a	Mat.	L’incremento	è	pari	al	numero	di	CFU
+-- dell’insegnamento	con	id	pari	a	IdInsegnamento,	presente	nella	tabella
+-- INSEGNAMENTO.
+
+DELIMITER |
+
+CREATE TRIGGER IncrementoCFU
+AFTER INSERT ON VERBALIZZAZIONE
+FOR EACH ROW
+BEGIN
+    UPDATE Studente
+    SET CFUConseguiti = CFUConseguiti + (
+        SELECT Cfu
+        FROM Insegnamento
+        WHERE Insegnamento.Id = NEW.IdInsegnamento
+    )
+    WHERE Matricola = NEW.Matricola;
+END |
+
+DELIMITER;
+
 ----INSERT
 -- Popolare	il	contenuto	delle	tabelle	STUDENTE,	CORSOLAUREA,	INSEGNAMENTO,
 -- DIPARTIMENTO	caricando	i	dati	dai	file	studenti.txt, cdl.txt, insegnamenti.txt,
@@ -207,7 +271,7 @@ INSERT INTO
         CFUConseguiti
     )
 VALUES (
-        1,
+        '1',
         8014,
         'Luca',
         'Bianchi',
@@ -222,27 +286,13 @@ INSERT INTO
         Cognome,
         CFUConseguiti
     )
-VALUES (2, 8014, 'Maria', 'Rossi', 18);
-
-INSERT INTO
-    STUDENTE (
-        Matricola,
-        CodiceCL,
-        Nome,
-        Cognome,
-        CFUConseguiti
-    )
-VALUES (3, 8014, 'Giulia', 'Neri', 0);
-
-INSERT INTO
-    STUDENTE (
-        Matricola,
-        CodiceCL,
-        Nome,
-        Cognome,
-        CFUConseguiti
-    )
-VALUES (4, 8014, 'Paolo', 'Verdi', 24);
+VALUES (
+        '2',
+        8014,
+        'Maria',
+        'Rossi',
+        18
+    );
 
 INSERT INTO
     STUDENTE (
@@ -253,7 +303,39 @@ INSERT INTO
         CFUConseguiti
     )
 VALUES (
-        5,
+        '3',
+        8014,
+        'Giulia',
+        'Neri',
+        0
+    );
+
+INSERT INTO
+    STUDENTE (
+        Matricola,
+        CodiceCL,
+        Nome,
+        Cognome,
+        CFUConseguiti
+    )
+VALUES (
+        '4',
+        8014,
+        'Paolo',
+        'Verdi',
+        24
+    );
+
+INSERT INTO
+    STUDENTE (
+        Matricola,
+        CodiceCL,
+        Nome,
+        Cognome,
+        CFUConseguiti
+    )
+VALUES (
+        '5',
         8014,
         'Chiara',
         'Marrone',
@@ -417,9 +499,9 @@ BEGIN
             if tp='Nonattivo' THEN
 
                     INSERT INTO PIANOSTUDI(Matricola,IdInsegnamento,Data) VALUES (Mat,IdIns,CURRENT_DATE);
-                    UPDATE INSEGNAMENTO SET NumIscritti = NumIscritti + 1 WHERE Id = IdIns;            
-
-            else         
+            END IF;
+            
+            if tp='Attivo' THEN
 
                 set posti = (
                     SELECT (MaxIscritti-NumIscritti) from INSEGNAMENTO 
@@ -428,7 +510,6 @@ BEGIN
 
                 if posti>0 THEN
                     INSERT INTO PIANOSTUDI(Matricola,IdInsegnamento,Data) VALUES (Mat,IdIns,CURRENT_DATE);
-                    UPDATE INSEGNAMENTO SET NumIscritti = NumIscritti + 1 WHERE Id = IdIns;
                 ELSE
                     INSERT INTO RICHIESTE_RIFIUTATE(Matricola,IdInsegnamento,Data) VALUES (Mat,IdIns,CURRENT_DATE);
                 end if;
@@ -475,7 +556,7 @@ DELIMITER;
 -- riga	relativa	allo	studente	con	matricola	pari	a	Mat.
 
 DELIMITER $
---Dovrebbe essere IN Mat INT e non VARCHAR(30)
+
 CREATE Procedure RimuoviStudente(IN Mat VARCHAR(30))
 begin
     DECLARE contatore INT;
@@ -489,3 +570,51 @@ begin
 END$
 
 DELIMITER;
+
+-- Viste
+-- LISTA_DIP_CON_INFORMATICA(Nome,	Sede)	à	restituisce	nome	e	sede	dei
+-- dipartimenti	che	hanno	corsi	di	laurea	che	a	loro	volta	contengono	insegnamenti	con
+-- SSD	pari	a	INF.
+CREATE VIEW LISTA_DIP_CON_INFORMATICA (Nome, Sede) AS
+SELECT DISTINCT
+    D.Nome,
+    D.Sede
+FROM
+    DIPARTIMENTO D
+    JOIN CORSOLAUREA C ON C.NomeDip = D.Nome
+    JOIN INSEGNAMENTO I ON I.CodiceCL = C.Codice
+WHERE
+    I.SSD = 'INF';
+
+-- LISTA_STUDENTI_INATTIVI	(Mat,	CodiceCL)	à	restituisce	la	lista	degli	studenti	che
+-- NON	hanno	alcun	insegnamento	nel	loro	piano	di	studi.
+CREATE VIEW LISTA_STUDENTI_INATTIVI (Mat, CodiceCL) AS
+SELECT S.Matricola AS Mat, S.CodiceCL
+FROM STUDENTE S
+WHERE
+    S.Matricola NOT IN(
+        SELECT P.Matricola
+        FROM PIANOSTUDI P
+    );
+
+-- LISTA_INSEGNAMENTI_TOP (Id,	Nome,	CodiceCL)	à	restituisce	l’insegnamento/
+-- insegnamenti	che	ha	/	hanno	ricevuto	più	richieste	da	parte	degli	studenti.	Le	richieste
+-- si	ottengono	sommando,	per	ciascun	insegnamento,	il	numero	di	volte	in	cui	tale
+-- insegnamento	appare	in	un	piano	di	studi	(richieste	accettate),	al	numero	di	volte	in	cui
+-- appare	nelle	richieste	rifiutate.
+
+-- LISTA_AREE_TOP (ssd)	à	restituisce	la	lista	degli	SSD	che	compaiono	in	almeno	3
+-- insegnamenti	presentinei	piani	di	studio	degli	studenti	con	CodiceCL	=	8014.
+
+CREATE VIEW LISTA_AREE_TOP (SSD) AS
+SELECT I.SSD
+FROM
+    PIANOSTUDI P
+    JOIN STUDENTE S ON P.Matricola = S.Matricola
+    JOIN INSEGNAMENTO I ON P.IdInsegnamento = I.Id
+WHERE
+    S.CodiceCL = 8014
+GROUP BY
+    I.SSD
+HAVING
+    COUNT(*) >= 3;
