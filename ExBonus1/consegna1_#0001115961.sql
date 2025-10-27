@@ -1,47 +1,11 @@
--- Utilizzando il software MySQL, costruire il database PIANI_STUDIO. Il database tiene
--- traccia di studenti iscritti a corsi di laurea di UNIBO. Nello specifico, il database supporta
--- un'applicazione che gestisce la compilazione dei piani di studio e la verbalizzazione dei voti
--- degli insegnamenti svolti.
-
--- Il	database	PIANI_STUDIO	è	composto	dalle	seguenti	tabelle	(usare	il	table	engine:	INNODB):
--- STUDENTE(Matricola,	CodiceCL,	Nome,	Cognome,	CFUConseguiti)
--- CORSOLAUREA(Codice,	Nome,	NomeDip,	NumeroProgrammato)
--- DIPARTIMENTO(Nome,	Sede,	NumeroDocenti)
--- INSEGNAMENTO(Id,	Nome,	CodiceCL,	CFU,	SSD,	NumIscritti,	MaxIscritti)
--- PIANOSTUDI(Matricola,	IdInsegnamento,	Data)
--- RICHIESTE_RIFIUTATE(Matricola,	IdInsegnamento,	Data)
--- VERBALIZZAZIONE(Matricola,	IdInsegnamento,	Data,	Voto)
--- Vincoli	sui	dati:
--- Ø Vincolo	di	integrità	referenziale	tra	STUDENTE.CodiceCL	e	CORSOLAUREA.Codice
--- Ø Vincolo	di	integrità	referenziale	tra	INSEGNAMENTO.CodiceCL	e	CORSOLAUREA.Codice
--- Ø Vincolo	di	integrità	referenziale	tra	CORSOLAUREA.NomeDip	e	DIPARTIMENTO.Nome
--- Ø Vincolo	di	integrità	referenziale	tra	PIANOSTUDI.Matricola	e	STUDENTE.Matricola
--- Ø Vincolo	di	integrità	referenziale	tra	PIANOSTUDI.IdInsegnamento	e	INSEGNAMENTO.Id
--- Ø Vincolo	di	integrità	referenziale	tra	RICHIESTE_RIFIUTATE.Matricola	e	STUDENTE.Matricola
--- Ø Vincolo	di	integrità	referenziale	tra	RICHIESTE_RIFIUTATE.IdInsegnamento	e
--- INSEGNAMENTO.Id
--- Ø Vincolo	di	integrità	referenziale	tra	VERBALIZZAZIONE.Matricola	e	STUDENTE.Matricola
--- Ø Vincolo	di	integrità	referenziale	tra	VERBALIZZAZIONE.IdInsegnamento	e	INSEGNAMENTO.Id
--- Ø CORSOLAUREA.Nome	non	ammette	duplicati	e	non	può	essere	NULL
--- Ø CORSOLAUREA.NomeDip	non	può	essere	NULL
--- Ø Tutti	i	campi	di	tipo	stringa	devono	essere	VARCHAR	con	lunghezza	massima	30	caratteri.
--- Ø STUDENTE.CFUConseguiti	è	un	intero,	con	valore	di	default	pari	a	0.
--- Ø CORSOLAUREA.NumeroProgrammato	(type	ENUM)	può	assumere	solo	due	valori:	“Attivo”,
--- “Nonattivo”.
--- Ø INSEGNAMENTO.SSD	(type	ENUM)	può	assumere	solo	cinque	valori:	“INF”,	“ING-INF”,	“SECS”,
--- “IUS”,	“MAT”.
--- Ø I	campi	che	si	chiamano	Data	(presenti	in	tre	tabelle)	sono	di	tipo	Date.
--- Ø VERBALIZZAZIONE.Voto	NON	può	essere	NULL.
--- Ø Se	rimuovo	uno	STUDENTE,	cancello	anche	tutte	le	righe	nella	tabella	PIANOSTUDI,
--- RICHIESTE_RIFIUTATE	e	VERBALIZZAZIONE	che	fanno	riferimento	a	quello	studente.
--- Ø Se	rimuovo	un	INSEGNAMENTO,	cancello	anche	tutte	le	righe	nella	tabella	PIANOSTUDI,
--- RICHIESTE_RIFIUTATE	e	VERBALIZZAZIONE	che	fanno	riferimento	a	quell’insegnamento.
-
+-- CREAZIONE DEL DB
 DROP DATABASE IF EXISTS PIANI_STUDIO;
 
 CREATE DATABASE PIANI_STUDIO;
 
 USE PIANI_STUDIO;
+
+--CREAZIONE DELLE TABLE
 
 -- DIPARTIMENTO
 CREATE TABLE DIPARTIMENTO (
@@ -118,12 +82,9 @@ CREATE Table VERBALIZZAZIONE (
     FOREIGN KEY (IdInsegnamento) REFERENCES INSEGNAMENTO (Id) ON DELETE CASCADE
 );
 
---Implementare	i	seguenti	trigger:
+--Trigger:
 
--- IncrementaPartecipanti	à	Dopo	ogni	inserimento	nella	tabella	PIANOSTUDI
--- relativo	ad	un	certo	insegnamento	con	id	pari	a	IdInsegnamento,	modifica
--- automaticamente	il	campo	NumIscritti	associato	a	quell’id	nella	tabella
--- INSEGNAMENTO,	incrementandolo	di	1	unità.
+-- IncrementaPartecipanti	
 
 DELIMITER |
 
@@ -136,11 +97,7 @@ END |
 
 DELIMITER;
 
--- DecrementaPartecipanti	à	Dopo	ogni	rimozione	nella	tabella	PIANOSTUDI
--- relativo	ad	un	certo	insegnamento	con	id	pari	a	IdInsegnamento,	modifica
--- automaticamente	il	campo	NumIscritti	associato	a	quell’id	nella	tabella
--- INSEGNAMENTO,	decrementandolo	di	1	unità.
-
+-- DecrementaPartecipanti	
 DELIMITER |
 
 CREATE TRIGGER DecrementaPartecipanti
@@ -157,12 +114,7 @@ END |
 
 DELIMITER;
 
--- Dopo	ogni	inserimento	nella	tabella	VERBALIZZAZIONE	relativo
--- ad	un	certo	riga	con	id	dell’insegnamento	pari	a	IdInsegnamento	e	matricola	pari	a	Mat,
--- incrementa	automaticamente	il	campo	CFUConseguiti	nella	tabella	STUDENTE	nella	riga
--- relativa	alla	matricola	uguale	a	Mat.	L’incremento	è	pari	al	numero	di	CFU
--- dell’insegnamento	con	id	pari	a	IdInsegnamento,	presente	nella	tabella
--- INSEGNAMENTO.
+--IncrementoCFU
 
 DELIMITER |
 
@@ -182,10 +134,6 @@ END |
 DELIMITER;
 
 ----INSERT
--- Popolare	il	contenuto	delle	tabelle	STUDENTE,	CORSOLAUREA,	INSEGNAMENTO,
--- DIPARTIMENTO	caricando	i	dati	dai	file	studenti.txt, cdl.txt, insegnamenti.txt,
--- dipartimenti.txt. I	file	sono	disponibili	sulla	piattaforma	Virtuale.	Il	caricamento	dei	dati
--- di	una	tabella	DEVE	avvenire	attraverso	istruzioni	di	INSERT ripetute.
 
 -- INSERT ripetuti per DIPARTIMENTO
 INSERT INTO
@@ -200,7 +148,7 @@ INSERT INTO
     DIPARTIMENTO (Nome, Sede, NumeroDocenti)
 VALUES ('MAT', 'Bologna', 110);
 
-SELECT * FROM DIPARTIMENTO;
+
 
 -- INSERT ripetuti per CORSOLAUREA
 INSERT INTO
@@ -259,7 +207,7 @@ VALUES (
         'Attivo'
     );
 
-SELECT * FROM corsolaurea;
+
 
 -- INSERT ripetuti per STUDENTE
 INSERT INTO
@@ -342,7 +290,7 @@ VALUES (
         6
     );
 
-SELECT * FROM STUDENTE;
+
 
 -- INSERT ripetuti per INSEGNAMENTO
 INSERT INTO
@@ -445,24 +393,11 @@ VALUES (
         250
     );
 
-SELECT * FROM INSEGNAMENTO;
+
 
 --Implementare	le	seguenti	Stored	Procedure:
 
--- a) InserisciPartecipazione(IN Mat VARCHAR(30), IN IdIns VARCHAR(30)) à
--- à	Verifica	se	Mat	fa	riferimento	ad	una	matricola	esistente	nella	tabella	STUDENTE,	ed
--- InIns	ad	un	insegnamento	valido	nella	tabella	INSEGNAMENTO.	Se	tali	condizioni	sono
--- soddisfatte:
--- Se	IdIns	si	riferisce	ad	un	insegnamento	di	un	Corso	di	Laurea	con	numero	programmato
--- pari	ad	“Nonattivo”,	inserisce	una	riga	dentro	la	tabella	PIANOSTUDI,	con	Matricola	pari
--- a	Mat,	e	IdInsegnamento	pari	a	IdIns.	Viceversa,	Se	IdIns	si	riferisce	ad	un	insegnamento
--- di	un	Corso	di	Laurea	con	numero	programmato	pari	ad	“Attivo”:	verifica	se,	per
--- l’insegnamento	con	Id	pari	a	IdIns,		il	campo	NumIscritti	è	inferiore	a	MaxIscritti.	In	tal
--- caso,	inserisce	una	riga	dentro	la	tabella	PIANOSTUDI,	con	Matricola	pari	a	Mat,	e
--- IdInsegnamento	pari	a	IdIns.	Il	campo	Data	va	settato	alla	data	attuale.	Vice	versa,	se,
--- per	l’insegnamento	con	Id	pari	a	IdIns,		il	campo	NumIscritti	è	uguale	o	superiore	a
--- MaxIscritti,	inserire	una	riga	dentro	la	tabella	RICHIESTE_RIFIUTATE,	con	Matricola
--- pari	a	Mat,	e	IdInsegnamento	pari	a	IdIns.	Il	campo	Data	va	settato	alla	data	attuale
+-- a) InserisciPartecipazione(IN Mat VARCHAR(30), IN IdIns VARCHAR(30)) 
 
 DELIMITER $
 
@@ -483,7 +418,6 @@ BEGIN
             SELECT count(*) from INSEGNAMENTO where Id=IdIns
         );
         -- Questo serve per la gestione di casi in cui è già stato inserito
-        -- all'interno per evitare messaggi di errore, funziona anche senza.
         set presente = (
             SELECT count(*) FROM PIANOSTUDI WHERE Matricola=Mat AND IdInsegnamento=IdIns
         );
@@ -520,10 +454,7 @@ END $
 
 DELIMITER;
 
--- b) InserisciVerbalizzazione(IN Mat VARCHAR(30), IN Ins VARCHAR(30), Vt:
--- INT) à Verifica	se	Mat	ed	Ins	fanno	riferimento	ad	una	riga	presente	nella	tabella
--- PIANOSTUDI.	In	tal	caso,	aggiunge	una	riga	nella	tabella	VERBALIZZAZIONE,	con	voto
--- pari	a	Vt.	Il	campo	Data	va	settato	alla	data	attuale.
+-- b) InserisciVerbalizzazione(IN Mat VARCHAR(30), IN Ins VARCHAR(30), Vt:INT) 
 
 DELIMITER $
 
@@ -541,8 +472,8 @@ END$
 
 DELIMITER;
 
--- c) CancellaStorico() à Rimuove	tutte	le	righe	presenti	nella	tabella
--- RICHIESTE_RIFIUTATE.
+-- c) CancellaStorico() 
+
 DELIMITER $
 
 CREATE PROCEDURE CancellaStorico() 
@@ -552,8 +483,7 @@ END$
 
 DELIMITER;
 
--- d) RimuoviStudente(IN Mat VARCHAR(30)) à Rimuove	dalla	tabella	STUDENTE	la
--- riga	relativa	allo	studente	con	matricola	pari	a	Mat.
+-- d) RimuoviStudente(IN Mat VARCHAR(30))
 
 DELIMITER $
 
@@ -572,9 +502,8 @@ END$
 DELIMITER;
 
 -- Viste
--- LISTA_DIP_CON_INFORMATICA(Nome,	Sede)	à	restituisce	nome	e	sede	dei
--- dipartimenti	che	hanno	corsi	di	laurea	che	a	loro	volta	contengono	insegnamenti	con
--- SSD	pari	a	INF.
+
+-- LISTA_DIP_CON_INFORMATICA(Nome,	Sede)	
 CREATE VIEW LISTA_DIP_CON_INFORMATICA (Nome, Sede) AS
 SELECT DISTINCT
     D.Nome,
@@ -586,8 +515,7 @@ FROM
 WHERE
     I.SSD = 'INF';
 
--- LISTA_STUDENTI_INATTIVI	(Mat,	CodiceCL)	à	restituisce	la	lista	degli	studenti	che
--- NON	hanno	alcun	insegnamento	nel	loro	piano	di	studi.
+-- LISTA_STUDENTI_INATTIVI	(Mat,	CodiceCL)	
 CREATE VIEW LISTA_STUDENTI_INATTIVI (Mat, CodiceCL) AS
 SELECT S.Matricola AS Mat, S.CodiceCL
 FROM STUDENTE S
@@ -597,14 +525,26 @@ WHERE
         FROM PIANOSTUDI P
     );
 
--- LISTA_INSEGNAMENTI_TOP (Id,	Nome,	CodiceCL)	à	restituisce	l’insegnamento/
--- insegnamenti	che	ha	/	hanno	ricevuto	più	richieste	da	parte	degli	studenti.	Le	richieste
--- si	ottengono	sommando,	per	ciascun	insegnamento,	il	numero	di	volte	in	cui	tale
--- insegnamento	appare	in	un	piano	di	studi	(richieste	accettate),	al	numero	di	volte	in	cui
--- appare	nelle	richieste	rifiutate.
+-- LISTA_INSEGNAMENTI_TOP (Id,	Nome,	CodiceCL)
+CREATE VIEW LISTA_INSEGNAMENTI_TOP (Id, Nome, CodiceCL) AS
+SELECT I.Id, I.Nome, I.CodiceCL
+FROM INSEGNAMENTO I
+LEFT JOIN PIANOSTUDI P ON P.IdInsegnamento = I.Id
+LEFT JOIN RICHIESTE_RIFIUTATE R ON R.IdInsegnamento = I.Id
+GROUP BY I.Id, I.Nome, I.CodiceCL
+HAVING COUNT(P.IdInsegnamento) + COUNT(R.IdInsegnamento) = (
+    SELECT MAX(total_richieste)
+    FROM (
+        SELECT COUNT(P2.IdInsegnamento) + COUNT(R2.IdInsegnamento) as total_richieste
+        FROM INSEGNAMENTO I2
+        LEFT JOIN PIANOSTUDI P2 ON P2.IdInsegnamento = I2.Id
+        LEFT JOIN RICHIESTE_RIFIUTATE R2 ON R2.IdInsegnamento = I2.Id
+        GROUP BY I2.Id
+    ) as richieste_per_insegnamento
+);
 
--- LISTA_AREE_TOP (ssd)	à	restituisce	la	lista	degli	SSD	che	compaiono	in	almeno	3
--- insegnamenti	presentinei	piani	di	studio	degli	studenti	con	CodiceCL	=	8014.
+
+-- LISTA_AREE_TOP (ssd)	
 
 CREATE VIEW LISTA_AREE_TOP (SSD) AS
 SELECT I.SSD
