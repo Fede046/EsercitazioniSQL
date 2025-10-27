@@ -106,8 +106,6 @@ FOR EACH ROW
 BEGIN
     UPDATE INSEGNAMENTO
     SET NumIscritti = NumIscritti - 1
--- controllare se va bene old non c'è nelle slide del PROF ma risolve il problema
--- nel caso valutare soluzioni alternative
     WHERE Id = OLD.IdInsegnamento
       AND NumIscritti > 0;
 END |
