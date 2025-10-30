@@ -5,23 +5,23 @@ CREATE DATABASE PIANI_STUDIO;
 
 USE PIANI_STUDIO;
 
---CREAZIONE DELLE TABLE
+-- CREAZIONE DELLE TABLE
 
 -- DIPARTIMENTO
 CREATE TABLE DIPARTIMENTO (
     Nome VARCHAR(30) PRIMARY KEY,
     Sede VARCHAR(30),
     NumeroDocenti INT
-);
+) engine=InnoDB;
 
 -- CORSOLAUREA
 CREATE TABLE CORSOLAUREA (
     Codice INT PRIMARY KEY,
-    Nome VARCHAR(30) NOT NULL UNIQUE,
+    Nome VARCHAR(30) UNIQUE NOT NULL,
     NomeDip VARCHAR(30) NOT NULL,
     NumeroProgrammato ENUM('Attivo', 'Nonattivo'),
-    Foreign Key (NomeDip) REFERENCES DIPARTIMENTO (Nome)
-);
+    FOREIGN KEY (NomeDip) REFERENCES DIPARTIMENTO (Nome)
+)engine=InnoDB;
 
 -- Studenti
 CREATE TABLE STUDENTE (
@@ -30,8 +30,8 @@ CREATE TABLE STUDENTE (
     Nome VARCHAR(30),
     Cognome VARCHAR(30),
     CFUConseguiti INT DEFAULT(0),
-    Foreign Key (CodiceCL) REFERENCES CORSOLAUREA (Codice)
-);
+    FOREIGN KEY (CodiceCL) REFERENCES CORSOLAUREA (Codice) 
+)engine=InnoDB;
 
 -- INSEGNAMENTO
 CREATE TABLE INSEGNAMENTO (
@@ -48,10 +48,10 @@ CREATE TABLE INSEGNAMENTO (
     ),
     NumIscritti INT,
     MaxIscritti INT,
-    Foreign Key (CodiceCL) REFERENCES CORSOLAUREA (Codice)
-);
+    FOREIGN KEY (CodiceCL) REFERENCES CORSOLAUREA (Codice)
+)engine=InnoDB;
 
---PIANOSTUDI
+-- PIANOSTUDI
 CREATE Table PIANOSTUDI (
     Matricola VARCHAR(30),
     IdInsegnamento VARCHAR(30),
@@ -59,9 +59,9 @@ CREATE Table PIANOSTUDI (
     PRIMARY KEY (Matricola, IdInsegnamento),
     FOREIGN KEY (Matricola) REFERENCES STUDENTE (Matricola) ON DELETE CASCADE,
     FOREIGN KEY (IdInsegnamento) REFERENCES INSEGNAMENTO (Id) ON DELETE CASCADE
-);
+)engine=InnoDB;
 
---RICHIESTE_RIFIUTATE
+-- RICHIESTE_RIFIUTATE
 CREATE Table RICHIESTE_RIFIUTATE (
     Matricola VARCHAR(30),
     IdInsegnamento VARCHAR(30),
@@ -69,9 +69,9 @@ CREATE Table RICHIESTE_RIFIUTATE (
     PRIMARY KEY (Matricola, IdInsegnamento),
     FOREIGN KEY (Matricola) REFERENCES STUDENTE (Matricola) ON DELETE CASCADE,
     FOREIGN KEY (IdInsegnamento) REFERENCES INSEGNAMENTO (Id) ON DELETE CASCADE
-);
+)engine=InnoDB;
 
---VERBALIZZAZIONE
+-- VERBALIZZAZIONE
 CREATE Table VERBALIZZAZIONE (
     Matricola VARCHAR(30),
     IdInsegnamento VARCHAR(30),
@@ -80,9 +80,8 @@ CREATE Table VERBALIZZAZIONE (
     PRIMARY KEY (Matricola, IdInsegnamento),
     FOREIGN KEY (Matricola) REFERENCES STUDENTE (Matricola) ON DELETE CASCADE,
     FOREIGN KEY (IdInsegnamento) REFERENCES INSEGNAMENTO (Id) ON DELETE CASCADE
-);
+)engine=InnoDB;
 
---Trigger:
 
 -- IncrementaPartecipanti	
 
@@ -95,7 +94,7 @@ BEGIN
     UPDATE INSEGNAMENTO SET NumIscritti = NumIscritti + 1 WHERE Id = NEW.IdInsegnamento;
 END |
 
-DELIMITER;
+DELIMITER ;
 
 -- DecrementaPartecipanti	
 DELIMITER |
@@ -106,13 +105,12 @@ FOR EACH ROW
 BEGIN
     UPDATE INSEGNAMENTO
     SET NumIscritti = NumIscritti - 1
-    WHERE Id = OLD.IdInsegnamento
-      AND NumIscritti > 0;
+    WHERE Id = OLD.IdInsegnamento;
 END |
 
-DELIMITER;
+DELIMITER ;
 
---IncrementoCFU
+-- IncrementoCFU
 
 DELIMITER |
 
@@ -129,9 +127,11 @@ BEGIN
     WHERE Matricola = NEW.Matricola;
 END |
 
-DELIMITER;
+DELIMITER ;
 
-----INSERT
+
+
+-- INSERT
 
 -- INSERT ripetuti per DIPARTIMENTO
 INSERT INTO
@@ -149,19 +149,7 @@ VALUES ('MAT', 'Bologna', 110);
 
 
 -- INSERT ripetuti per CORSOLAUREA
-INSERT INTO
-    CORSOLAUREA (
-        Codice,
-        Nome,
-        NomeDip,
-        NumeroProgrammato
-    )
-VALUES (
-        8019,
-        'Informatica',
-        'DISI',
-        'Nonattivo'
-    );
+INSERT INTO CORSOLAUREA (Codice,Nome,NomeDip,NumeroProgrammato) VALUES (8019,'Informatica','DISI','Nonattivo');
 
 INSERT INTO
     CORSOLAUREA (
@@ -281,7 +269,7 @@ INSERT INTO
         CFUConseguiti
     )
 VALUES (
-        '5',
+        5,
         8014,
         'Chiara',
         'Marrone',
@@ -490,14 +478,14 @@ begin
     DECLARE contatore INT;
 
     SET contatore = (
-        SELECT COUNT(*) FROM studente where (Matricola=Mat)
+        SELECT COUNT(*) FROM STUDENTE WHERE (Matricola=Mat)
     );
     if (contatore>0) THEN
-        DELETE from studente WHERE Matricola=Mat;
+        DELETE FROM STUDENTE WHERE Matricola=Mat;
     end if;
 END$
 
-DELIMITER;
+DELIMITER ;
 
 -- Viste
 
@@ -514,14 +502,12 @@ WHERE
     I.SSD = 'INF';
 
 -- LISTA_STUDENTI_INATTIVI	(Mat,	CodiceCL)	
+
 CREATE VIEW LISTA_STUDENTI_INATTIVI (Mat, CodiceCL) AS
 SELECT S.Matricola AS Mat, S.CodiceCL
 FROM STUDENTE S
-WHERE
-    S.Matricola NOT IN(
-        SELECT P.Matricola
-        FROM PIANOSTUDI P
-    );
+LEFT JOIN PIANOSTUDI P ON P.Matricola = S.Matricola
+WHERE P.Matricola IS NULL;
 
 -- LISTA_INSEGNAMENTI_TOP (Id,	Nome,	CodiceCL)
 CREATE VIEW LISTA_INSEGNAMENTI_TOP (Id, Nome, CodiceCL) AS
