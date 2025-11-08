@@ -1,6 +1,6 @@
 //L'esercizio è stato svolto:
 //Inserendo	tutto	il	codice	nel	file	consegna2.js e	caricando	il	file	attraverso	
-//l’interfaccia	del	tool	Studio	3T	(File	à	Open	à	Run)	
+//l’interfaccia	del	tool	Studio	3T	(File -> Open -> Run)	
 
 conn = new Mongo();
 db = conn.getDB("unibo");
